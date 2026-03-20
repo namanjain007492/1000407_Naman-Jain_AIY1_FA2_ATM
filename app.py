@@ -51,7 +51,7 @@ from reportlab.platypus       import (SimpleDocTemplate, Paragraph, Spacer,
 # ═══════════════════════════════════════════════════════════════════════
 #  GLOBAL CONFIG
 # ═══════════════════════════════════════════════════════════════════════
-DATA_PATH  = "/mnt/user-data/uploads/atm_cash_management_dataset.csv"
+DATA_PATH  = "atm_cash_management_dataset.csv"
 OUT_ROOT   = os.path.join(os.path.dirname(os.path.abspath(__file__)), "atm_output")
 DPI        = 150
 FMT        = FuncFormatter(lambda x, _: f"₹{x/1_000:.0f}K")
