@@ -1,16 +1,16 @@
 """
 ╔══════════════════════════════════════════════════════════════════════╗
-║     ATM CASH DEMAND FORECASTING & INTELLIGENT DECISION SYSTEM       ║
-║                      COMPLETE SINGLE-FILE SOLUTION                  ║
+║     ATM CASH DEMAND FORECASTING & INTELLIGENT DECISION SYSTEM        ║
+║                      COMPLETE SINGLE-FILE SOLUTION                   ║
 ╠══════════════════════════════════════════════════════════════════════╣
-║  Modules (all-in-one):                                              ║
-║  1. Data Preprocessing        5. Anomaly Detection                  ║
-║  2. Feature Engineering       6. Prediction Models (RF + GBM)       ║
-║  3. Exploratory Data Analysis 7. Decision Alert System              ║
-║  4. K-Means Clustering        8. PDF Report + CSV Export            ║
+║  Modules (all-in-one):                                               ║
+║  1. Data Preprocessing        5. Anomaly Detection                   ║
+║  2. Feature Engineering       6. Prediction Models (RF + GBM)        ║
+║  3. Exploratory Data Analysis 7. Decision Alert System               ║
+║  4. K-Means Clustering        8. PDF Report + CSV Export             ║
 ║                                                                      ║
-║  Run:  python atm_system.py                                         ║
-║  Dashboard: streamlit run atm_system.py                             ║
+║  Run:  python atm_system.py                                          ║
+║  Dashboard: streamlit run atm_system.py                              ║
 ╚══════════════════════════════════════════════════════════════════════╝
 """
 
@@ -1075,18 +1075,7 @@ def _plot_alert_dashboard(df):
 
     # Panel 3 — Alert timeline (full width)
     ax3 = fig.add_subplot(gs[1,:])
-    daily_a = df.groupby("Date")["Alert_Severity"].apply(
-        lambda x: pd.Series({
-            "CRITICAL": (x=="CRITICAL").sum(),
-            "HIGH":     (x=="HIGH").sum(),
-            "MEDIUM":   (x=="MEDIUM").sum(),
-        })
-    ).reset_index()
-    if "level_1" in daily_a.columns:
-        daily_a = daily_a.pivot(index="Date", columns="level_1", values="Alert_Severity").reset_index()
-    elif isinstance(daily_a.columns, pd.MultiIndex):
-        daily_a.columns = ["Date"] + list(daily_a.columns[1:])
-
+    
     # Safer approach: recompute daily counts directly
     dal = df.groupby("Date").agg(
         CRITICAL=("Alert_Severity", lambda x: (x=="CRITICAL").sum()),
@@ -1367,6 +1356,20 @@ def run_full_pipeline(data_path=DATA_PATH):
 #  STREAMLIT INTERACTIVE DASHBOARD
 # ═══════════════════════════════════════════════════════════════════════
 
+def clean_data_for_streamlit(df):
+    """
+    FIX FOR LargeUtf8 ERROR:
+    Converts problematic PyArrow/LargeUtf8 data types into 
+    standard Python strings so Streamlit's frontend doesn't crash.
+    """
+    if not isinstance(df, pd.DataFrame):
+        return df
+    safe_df = df.copy()
+    for col in safe_df.columns:
+        if safe_df[col].dtype == 'object' or str(safe_df[col].dtype).startswith('string'):
+            safe_df[col] = safe_df[col].astype(str)
+    return safe_df
+
 def streamlit_app():
     import streamlit as st
 
@@ -1393,13 +1396,20 @@ def streamlit_app():
         df    = detect_zscore(df); df = detect_iqr(df)
         df, _ = detect_isoforest(df); df = build_consensus(df)
         Xsc, _= _prepare_cluster_data(df)
-        km, lbl = KMeans(n_clusters=3, init="k-means++", n_init=20, random_state=42).fit_predict(Xsc).__class__, None
+        
+        # Cleaned up KMeans call here
         km    = KMeans(n_clusters=3, init="k-means++", n_init=20, random_state=42)
         lbl   = km.fit_predict(Xsc)
+        
         df    = _assign_cluster_labels(df, lbl)
         art   = train_models(df)
         df    = annotate_predictions(df, art)
         df    = generate_alerts(df)
+        
+        # --- THE LargeUtf8 FIX ---
+        # Applying this here automatically protects ALL subsets created from it below
+        df = clean_data_for_streamlit(df)
+        
         return df, art
     df_full, model_art = _load()
 
@@ -1642,7 +1652,7 @@ def streamlit_app():
         with st.form("rtpf"):
             r1,r2,r3 = st.columns(3)
             iw  = r1.number_input("💸 Total Withdrawals (₹)", 5000,150000,50000,1000)
-            id_ = r2.number_input("💰 Total Deposits (₹)",       0,100000,10000,1000)
+            id_ = r2.number_input("💰 Total Deposits (₹)",      0,100000,10000,1000)
             ic  = r3.number_input("🏧 Prev Cash Level (₹)",      0,500000,100000,5000)
             r4,r5,r6 = st.columns(3)
             ih  = r4.selectbox("🎉 Holiday?",       [0,1],format_func=lambda x:"Yes" if x else "No")
