@@ -1,12 +1,9 @@
-pandas
 numpy
+pandas
 scipy
-scikit-learn
-xgboost
 matplotlib
 seaborn
-streamlit
+scikit-learn
 reportlab
-openpyxl
-joblib
-
+altair<5
+streamlit
