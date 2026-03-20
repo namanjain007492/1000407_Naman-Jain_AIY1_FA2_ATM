@@ -1,8 +1,12 @@
-numpy
 pandas
+numpy
 scipy
+scikit-learn
+xgboost
 matplotlib
 seaborn
-scikit-learn
-reportlab
 streamlit
+reportlab
+openpyxl
+joblib
+
