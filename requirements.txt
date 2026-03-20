@@ -1,9 +1,9 @@
 numpy
-pandas
 scipy
 matplotlib
 seaborn
 scikit-learn
 reportlab
 altair<5
-streamlit
+streamlit>=1.32.0
+pandas>=2.0.0
